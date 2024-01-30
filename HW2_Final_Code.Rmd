@@ -1,0 +1,293 @@
+---
+title: "Home Work 2"
+author: "Nicholas Nasser (UT EID - nan823)"
+date: "GitHub Repository Link - https://github.com/sous20/HW2"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(kableExtra)
+profs = read.csv("profs.csv")
+bikeshare = read.csv("bikeshare.csv")
+metro = read.csv("capmetro_UT.csv")
+bill = read.csv("billboard.csv")
+```
+
+## Problem 1
+
+#### Part A
+
+```{r, fig.align = "center", fig.height = 4, fig.width = 6}
+
+ggplot(profs) + geom_histogram(aes(x = eval), color = "black", fill = "palegreen3", binwidth = 0.1) + labs(title = "Course Evaluation Scores for UT Professors", x = "Average Teaching Evaluation Score (Scale of 1-5)", y = "Count")
+
+```
+
+&nbsp;
+
+The left-skewed histogram shown above has a mean score of `r round(mean(profs$eval), digits = 2)` and a standard deviation of `r round(sd(profs$eval), digits = 2)`. Based on these summary statistics, we can see that professors at the university are providing an overall satisfying course experience for students. That being said, the presence of scores near 2-2.5/5 indicate that some students are unhappy with a handful of professors.
+
+\newpage
+
+#### Part B
+
+```{r, fig.align = "center", fig.height = 4, fig.width = 6}
+
+ggplot(profs) + geom_boxplot(aes(x = native, y = eval), fill = "khaki3") + labs( title = "Course Evaluation Scores for UT Professors by Native Speaker Status", x = "Native Speaker of English", y = "Average Score (Scale of 1-5)")
+
+profs_eng = filter(profs, native == "yes")
+profs_non_eng = filter(profs, native == "no")
+```
+
+&nbsp;
+
+Native English Speaking Professors:
+
+```{r}
+
+fivenum(profs_eng$eval)
+
+```
+
+Non-Native English Speaking Professors:
+
+```{r}
+
+fivenum(profs_non_eng$eval)
+
+```
+
+&nbsp;
+
+After observing the side by side box plots shown above, it is clear that the average evaluation scores for native English speaking professors were higher than they were for non-native English speaking professors in terms of first quartile, median, third quartile, and maximum values, with the exception being the minimum values. This indicates that overall, students feel they benefit more from taking classes with native English speaking professors.
+
+\newpage
+
+#### Part C
+
+```{r, fig.align = "center", fig.height = 6, fig.width = 6}
+
+ggplot(profs) + geom_histogram(aes(x = eval), color = "black", fill = "pink2", binwidth = 0.1) + labs(title = "Course Evaluation Scores for UT Professors by Gender", x = "Average Teaching Evaluation Score (Scale of 1-5)", y = "Count") + facet_wrap(~gender, nrow = 2)
+
+by_gender = group_by(profs, gender)
+mean_sd_bygender = summarize(by_gender, mean_eval_score = round(mean(eval), digits = 2), standard_deviation = round(sd(eval), digits = 2))
+
+mean_sd_bygender %>%
+  kbl(caption = "Mean and Standard Deviation of Course Evaluation Scores by Gender") %>%
+  kable_styling(latex_options = "hold_position")
+
+```
+&nbsp;
+
+When looking at course evaluation scores for professors by gender, we see that male professors have a slightly higher average score than their female counterparts - 4.07/5 to 3.90/5 respectively. The standard deviation from the mean was 0.56 for male professors, and 0.54 for female professors. Average ratings of about 4.0/5 with a standard deviation of about 0.55 for both male and female professors demonstrate that there is not much correlation between a professor's gender and his or her evaluation score; students do not think much about - if it all - gender when giving their professors evaluation scores.
+
+\newpage
+
+#### Part D
+
+```{r, fig.align = "center", fig.height = 4, fig.width = 6}
+
+ggplot(profs) + geom_point(aes(x = beauty, y = eval)) + labs(title = "Professor Physical Attractiveness vs. Course Evaluation Scores", x = "Physcial Attractiveness (Deviation from Average)", y = "Average Score (Scale of 1-5)")
+
+```
+
+&nbsp;
+
+Calculating the correlation between physical attractiveness of professors and the course evaluation scores they received reveals a low positive correlation coefficient of `r round(cor(profs$beauty, profs$eval), digits = 2)`. This low coefficient value as well as the random location of points on the scatter plot display a lack of any significant association between the two variables, meaning it is unlikely that students are rating professors based on their physical attractiveness.
+
+\newpage
+
+## Problem 2
+
+#### Plot A
+
+```{r, fig.align = "center", fig.height = 4, fig.width = 6}
+
+average_hourly = group_by(bikeshare, hr) %>%
+  
+  summarise(average_rentals = mean(total)) %>%
+  
+  round(2)
+
+ggplot(average_hourly) + geom_line(aes(x = hr, y = average_rentals)) + labs(title = "Average Hourly Bike Rentals for All Hours of the Day", x = "Hour of the Day (0-23)", y = "Average Hourly Bike Rentals (Total)")
+
+```
+&nbsp;
+
+The line graph above plots the averages of total bike rentals for each hour of the day across two years (2011 and 2012) in Washington D.C. The x-axis represents the hours of the day, with 0 being 12:00 AM and 23 being 11:00 PM. The y-axis represents the average of total bikes rented during any given hour. Looking at the plot, we see that the peak times for bike rentals occur at around 7:30 AM and 5:30 PM, indicating increased demand for bike rentals during rush hours. We also see a dip in demand for bike rentals early in the mornings as well as late at night, when most people are usually at home or sleeping. Based on these observations, we can conclude that demand for rental bikes is partially reliant on when people are going to work.
+
+\newpage
+
+#### Plot B
+
+```{r, fig.align = "center", message = FALSE}
+
+average_hourly_f = group_by(bikeshare, hr, workingday) %>%
+  
+  summarise(average_rentals = mean(total)) %>%
+  
+  round(2)
+
+workingday_facet = c(`0` = "Not a Working Day", `1` = "Working Day")
+
+ggplot(average_hourly_f) + geom_line(aes(x = hr, y = average_rentals)) + facet_wrap(~workingday, labeller = as_labeller(workingday_facet)) + labs(title = "Average Hourly Bike Rentals for All Hours of the Day by Working Day", x = "Hour of the Day (0-23)", y = "Average Hourly Bike Rentals (Total)")
+
+```
+&nbsp;
+
+The faceted line graphs above represent the same data and have the same axes as the line graph shown previously, with the only difference being that now the data is separated by whether or not it was a working day. Working days include all days that were not holidays or weekends. Observing these plots reveals that demand for rental bikes is in fact partially reliant on when people are commuting to and from work, as was determined from the previous plot. However, we now also know that a large portion of the bikes that were rented in between rush hours can be attributed to people going out leisurely on weekends and/or holidays during the middle of the day. This is why we see a much larger nosedive in demand for bikes in between rush hours during working days than we do on the original plot.
+
+\newpage
+
+#### Plot C
+
+```{r, fig.align = "center", message = FALSE}
+
+ridership_9am = filter(bikeshare, hr == "9") %>%
+  
+  group_by(weathersit, workingday) %>%
+  
+  summarise(average_rentals = mean(total)) %>%
+  
+  round(2)
+
+ggplot(ridership_9am) + geom_col(aes(x = weathersit, y = average_rentals), color = "black", fill = "tomato2") + facet_wrap(~workingday, labeller = as_labeller(workingday_facet)) + labs(title = "Weather Situation vs. Ridership at 9 AM by Working Day ", x = "Weather Situation (Severity)", y = "Average Ridership")
+
+```
+&nbsp;
+
+The bar plots above display the relationship between weather conditions and average ridership only during the 9 AM hour, and are faceted based on whether or not it was a working day. For a bit of context, here are descriptions for each of the four possible weather situations:
+
+&nbsp;
+
+1 - Clear, Few clouds, Partly cloudy, Partly cloudy
+
+&nbsp;
+
+2 -  Mist + Cloudy, Mist + Broken clouds, Mist + Few clouds, Mist
+
+&nbsp;
+
+3 - Light Snow, Light Rain + Thunderstorm + Scattered clouds, Light Rain + Scattered clouds
+
+&nbsp;
+
+4 -  Heavy Rain + Ice Pallets + Thunderstorm + Mist, Snow + Fog
+
+&nbsp;
+
+The fourth weather situation is not present on the bar plot because there were no occurrences of it during the 9 AM hour on any day in the data set. Looking at each bar plot, we can see that overall ridership levels at 9 AM are higher during working days. However, the more important trend to observe is that as the weather becomes more severe, less people use the bike share system regardless of whether it is a working day or not. We can simply conclude from this observation that weather/environmental factors play a large role in determining demand for rental bikes.
+
+\newpage
+
+## Problem 3
+
+#### Part 1
+
+```{r, fig.align = "center", fig.height = 6, message = FALSE}
+
+metro = mutate(metro, day_of_week=factor(day_of_week, levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")), month = factor(month,levels=c("Sep", "Oct","Nov")))
+
+average_board = group_by(metro, day_of_week, hour_of_day, month) %>%
+  
+  summarise(average_boarding = mean(boarding))
+
+ggplot(average_board) + geom_line(aes(x = hour_of_day, y = average_boarding, color = month)) + facet_wrap(~day_of_week) + scale_color_brewer(type = "qual") + labs(title = "Hour of the Day vs. Average Boardings by Month and Day of the Week", x = "Hour of the Day (6AM to 9PM)", y = "Average Boardings", color = "Month")
+
+```
+&nbsp;
+
+The figure above is a faceted line graph that displays the average number of people who board a Capital Metro bus in the UT area from 6 AM to 10 PM for every day of the week and every month displayed on the legend (September, October, and November). The hour of peak boardings stays fairly similar across most days, as we can see that people usually get on the bus at around 3 to 5 PM across the entire week. Average boardings on Mondays in September look lower compared to other days and months most likely due to the fact that the first Monday of every September is labor day. A full Monday without usual commuter traffic to work is bound to lower the average of people who take the bus on these days. Similarly, average boardings on Wednesdays, Thursdays, and Fridays in November look lower than usual most likely because people are off from work for Thanksgiving.
+
+\newpage
+
+#### Part 2
+
+```{r, fig.align = "center", fig.height = 7, fig.width = 9.5, message = FALSE}
+
+ggplot(metro) + geom_point(aes(x = temperature, y = boarding, color = weekend)) + facet_wrap(~hour_of_day) + labs(title = "Temperature vs. Boardings by Hour of the Day and Weekend Status", x = "Temperature (F)", y = "Total Boardings", color = "Weekend Status")
+
+```
+&nbsp;
+
+The scatter plot above plots the relationship between temperature measured in degrees Fahrenheit and total boardings by the hour of the day and whether it was a weekend or weekday. Looking at each portion of the scatter plot, we can see that boardings stay relatively constant regardless of temperature (the points are evenly distributed horizontally along each scatter plot).
+
+\newpage
+
+## Problem 4
+
+#### Part A
+
+&nbsp;
+
+```{r, message = FALSE}
+
+top_weeks = group_by(bill, performer, song) %>%
+  
+  summarise("Count" = length(song)) %>%
+  
+  arrange(desc(Count)) %>%
+  
+  head(10)
+
+colnames(top_weeks) = c("Performer", "Song", "Count")
+  
+  top_weeks %>%
+    
+    kbl(caption = "Top Ten Most Popular Songs Since 1958 by Length in Weeks on Billboard 100") %>%
+    
+    kable_styling(latex_options = "hold_position")
+
+```
+
+&nbsp;
+
+The table above displays ten songs that remained on the Billboard Top 100 for the longest time in history. It includes the name of each song, the artist for each song, and how many weeks each song was on the chart for.
+
+#### Part B
+
+&nbsp;
+
+```{r, fig.align = "center", fig.height = 4, fig.width = 6}
+
+year_diversity = filter(bill, year > 1958 & year < 2021) %>%
+  
+  group_by(year) %>%
+  
+  summarise("Num_unique" = length(unique(song)))
+
+ggplot(year_diversity) + geom_line(aes(x = year, y = Num_unique)) + labs(title = "Year vs. Number of Unique Songs on the Billboard Top 100", x = "Year", y = "Number of Unique Songs")
+
+```
+
+&nbsp;
+
+The line graph shown above plots the relationship between the year in history and the number of unique songs that made it to the Billboard Top 100. The most interesting trend is the massive dip in song variance from about 1970 up until 2000, when it began to increase again.
+
+\newpage
+
+#### Part C
+
+```{r, fig.align = "center", message = FALSE}
+
+ten_week_hits = group_by(bill, performer, song) %>%
+  
+  summarise("num_weeks" = length(song)) %>%
+  
+  filter(num_weeks >= 10) %>%
+  
+  group_by(performer) %>%
+  
+  summarise("num_songs" = length(song)) %>%
+  
+  filter(num_songs >= 30)
+
+ggplot(ten_week_hits) + geom_col(aes(x = performer, y = num_songs), color = "black", fill = "slateblue1") + labs(title = "Number of Ten Week Hits for Artists with At Least 30 Hits", x = "Artist", y = "Number of Ten Week Hits") + coord_flip()
+
+```
+
+&nbsp;
+
+The bar plot above displays the number of ten week hits for 19 artists who have at least 30 ten week hits throughout their career. A ten week hit refers to a song that stayed on the Billboard Hot 100 for at least ten weeks.
